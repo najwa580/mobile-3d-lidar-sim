@@ -1,0 +1,130 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- ================================================= -->
+    <!-- COULEURS GAZEBO                                   -->
+    <!-- ================================================= -->
+    <gazebo reference="base_link">
+        <material>Gazebo/Blue</material>
+    </gazebo>
+
+    <gazebo reference="right_back_wheel_link">
+        <material>Gazebo/DarkGrey</material>
+        <mu1>1.5</mu1>
+        <mu2>1.5</mu2>
+        <kp>1000000.0</kp>
+        <kd>100.0</kd>
+    </gazebo>
+
+    <gazebo reference="left_back_wheel_link">
+        <material>Gazebo/DarkGrey</material>
+        <mu1>1.5</mu1>
+        <mu2>1.5</mu2>
+        <kp>1000000.0</kp>
+        <kd>100.0</kd>
+    </gazebo>
+
+    <gazebo reference="right_front_wheel_link">
+        <material>Gazebo/DarkGrey</material>
+        <!-- Roues avant : friction BASSE → roues folles (caster) -->
+        <mu1>0.001</mu1>
+        <mu2>0.001</mu2>
+    </gazebo>
+
+    <gazebo reference="left_front_wheel_link">
+        <material>Gazebo/DarkGrey</material>
+        <!-- Roues avant : friction BASSE → roues folles (caster) -->
+        <mu1>0.001</mu1>
+        <mu2>0.001</mu2>
+    </gazebo>
+
+    <gazebo reference="lidar_link">
+        <material>Gazebo/Orange</material>
+    </gazebo>
+
+    <!-- ================================================= -->
+    <!-- DIFF DRIVE PLUGIN                                 -->
+    <!--                                                   -->
+    <!-- FIX CRITIQUE : 1 seul joint gauche + 1 droit     -->
+    <!-- Le plugin standard ne supporte PAS 4 joints.     -->
+    <!-- → on utilise les roues ARRIÈRE comme motrices    -->
+    <!-- → les roues avant ont mu=0.001 (roues folles)    -->
+    <!--                                                   -->
+    <!-- wheel_separation : distance entre les 2 roues    -->
+    <!-- arrière = (base_width + wheel_length) + 2*0.01   -->
+    <!-- = (0.18 + 0.06) + 0.02 = 0.26m                  -->
+    <!-- ================================================= -->
+    <gazebo>
+        <plugin name="diff_drive" filename="libgazebo_ros_diff_drive.so">
+
+            <ros>
+                <remapping>cmd_vel:=/cmd_vel</remapping>
+                <remapping>odom:=/odom</remapping>
+            </ros>
+
+            <!-- UN seul joint gauche, UN seul joint droit -->
+            <left_joint>base_left_back_wheel_joint</left_joint>
+            <right_joint>base_right_back_wheel_joint</right_joint>
+
+            <!-- Paramètres physiques corrects -->
+            <wheel_separation>0.26</wheel_separation>
+            <wheel_diameter>0.065</wheel_diameter>
+
+            <!-- Limites -->
+            <max_wheel_torque>20.0</max_wheel_torque>
+            <max_wheel_acceleration>5.0</max_wheel_acceleration>
+
+            <!-- Frames -->
+            <odometry_frame>odom</odometry_frame>
+            <robot_base_frame>base_footprint</robot_base_frame>
+
+            <!-- Publication -->
+            <publish_odom>true</publish_odom>
+            <publish_odom_tf>true</publish_odom_tf>
+            <publish_wheel_tf>false</publish_wheel_tf>
+
+            <update_rate>50</update_rate>
+
+        </plugin>
+    </gazebo>
+
+    <!-- ================================================= -->
+    <!-- LIDAR SENSOR                                      -->
+    <!-- ================================================= -->
+    <gazebo reference="lidar_link">
+        <sensor name="lidar_sensor" type="ray">
+            <pose>0 0 0 0 0 0</pose>
+            <visualize>true</visualize>
+            <update_rate>20</update_rate>
+            <ray>
+                <scan>
+                    <horizontal>
+                        <samples>360</samples>
+                        <resolution>1</resolution>
+                        <min_angle>-3.14159</min_angle>
+                        <max_angle>3.14159</max_angle>
+                    </horizontal>
+                </scan>
+                <range>
+                    <min>0.12</min>
+                    <max>12.0</max>
+                    <resolution>0.015</resolution>
+                </range>
+                <noise>
+                    <type>gaussian</type>
+                    <mean>0.0</mean>
+                    <stddev>0.001</stddev>
+                </noise>
+            </ray>
+            <plugin name="gazebo_ros_laser_controller"
+                    filename="libgazebo_ros_ray_sensor.so">
+                <ros>
+                    <remapping>~/out:=scan</remapping>
+                </ros>
+                <output_type>sensor_msgs/LaserScan</output_type>
+                <frame_name>lidar_link</frame_name>
+            </plugin>
+        </sensor>
+    </gazebo>
+
+</robot>
